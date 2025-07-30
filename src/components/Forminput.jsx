@@ -8,7 +8,6 @@ function Forminput({ label, type, name }) {
         className="input w-full"
         placeholder="Type here"
       />
-      <p className="label">Optional</p>
     </fieldset>
   );
 }

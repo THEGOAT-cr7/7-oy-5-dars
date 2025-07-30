@@ -1,50 +1,39 @@
+import { useState } from "react";
+import { useDispatch } from "react-redux";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/config";
-import { useDispatch } from "react-redux";
-import { login } from "../app/features/userSlice";
 import { toast } from "react-toastify";
-import { useState, useCallback } from "react";
+import { login as _login } from "../app/feature/userSlice";
 
 export const useLogin = () => {
-  const dispatch = useDispatch();
   const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
 
-  const loginUser = useCallback(
-    async (email, password) => {
-      setIsPending(true);
-      setError(null);
+  const login = async (email, password) => {
+    setIsPending(true);
+    try {
+      const res = await signInWithEmailAndPassword(auth, email, password);
+      const user = res.user;
+      if (!user) throw new Error("Authentication failed");
 
-      try {
-        if (!email || !password) {
-          throw new Error("Iltimos, email va parolni kiriting.");
-        }
+      // Saqlash: foydalanuvchi ma'lumotlarini localStorage'ga
+      const userData = {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || "User",
+        photoURL: user.photoURL || null,
+      };
 
-        const res = await signInWithEmailAndPassword(auth, email, password);
-        if (!res.user) {
-          throw new Error("Login muvaffaqiyatsiz tugadi.");
-        }
+      localStorage.setItem("user", JSON.stringify(userData)); // ✅ SAVE TO LOCAL
+      dispatch(_login(userData)); // ✅ REDUXga yuboramiz
 
-        dispatch(
-          login({
-            uid: res.user.uid,
-            email: res.user.email,
-            displayName: res.user.displayName,
-          })
-        );
+      toast.success(`Welcome, ${user.displayName || "User"}`);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsPending(false);
+    }
+  };
 
-        toast.success(`🎉 Welcome back, ${res.user.email}`);
-        return { success: true };
-      } catch (err) {
-        toast.error(`❌ ${err.message}`);
-        setError(err.message);
-        return { success: false };
-      } finally {
-        setIsPending(false);
-      }
-    },
-    [dispatch]
-  );
-
-  return { login: loginUser, isPending, error };
+  return { login, isPending };
 };

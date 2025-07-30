@@ -11,10 +11,21 @@ import Signup from "./pages/Signup";
 import { useSelector } from "react-redux";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { login as _login } from "./app/feature/userSlice";
 
 function App() {
+  const dispatch = useDispatch();
+
   const { user } = useSelector((state) => state.user);
 
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      dispatch(_login(JSON.parse(storedUser))); // ✅ localdagi userni redux'ga yuklash
+    }
+  }, []);
   const routes = createBrowserRouter([
     {
       path: "/",
@@ -24,9 +35,18 @@ function App() {
         </ProtectedRoutes>
       ),
       children: [
-        { index: true, element: <Home /> },
-        { path: "/about", element: <About /> },
-        { path: "/contact", element: <Contact /> },
+        {
+          index: true,
+          element: <Home />,
+        },
+        {
+          path: "/about",
+          element: <About />,
+        },
+        {
+          path: "/contact",
+          element: <Contact />,
+        },
       ],
     },
     {

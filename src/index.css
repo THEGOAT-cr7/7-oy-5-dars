@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @plugin "daisyui";
-html,
+/* html,
 body,
 #root {
   @apply h-full;
@@ -16,4 +16,4 @@ body,
   .registration {
     @apply bg-[url('https://picsum.photos/1200/800')] bg-center bg-no-repeat bg-cover h-full;
   }
-}
+} */

@@ -1,50 +1,56 @@
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "../firebase/config";
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { login } from "../app/features/userSlice";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth, db } from "../firebase/config";
 import { toast } from "react-toastify";
+import { login } from "../app/feature/userSlice";
+import { addDoc, collection } from "firebase/firestore";
 
 export const useSignup = () => {
-  const dispatch = useDispatch();
   const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
 
-  const signup = useCallback(
-    async (displayName, email, password) => {
-      setIsPending(true);
-      setError(null);
+  const signup = async (userName, email, password) => {
+    setIsPending(true);
 
-      try {
-        if (!displayName || !email || !password) {
-          throw new Error("Barcha maydonlarni to‘ldiring.");
-        }
+    try {
+      const res = await createUserWithEmailAndPassword(auth, email, password);
 
-        const res = await createUserWithEmailAndPassword(auth, email, password);
-        if (!res.user) throw new Error("Ro'yxatdan o'tishda xatolik yuz berdi");
+      if (!res.user) throw new Error("Authentication failed");
 
-        await updateProfile(res.user, { displayName });
+      const avatarURL = `https://api.dicebear.com/9.x/initials/svg?seed=${userName}`;
 
-        dispatch(
-          login({
-            uid: res.user.uid,
-            email: res.user.email,
-            displayName: res.user.displayName,
-          })
-        );
+      await updateProfile(res.user, {
+        displayName: userName,
+        photoURL: avatarURL,
+      });
 
-        toast.success(`🎉 Welcome ${displayName}`);
-        return { success: true };
-      } catch (err) {
-        toast.error(`❌ ${err.message}`);
-        setError(err.message);
-        return { success: false };
-      } finally {
-        setIsPending(false);
-      }
-    },
-    [dispatch]
-  );
+      await addDoc(collection(db, "users"), {
+        online: true,
+        displayName: userName,
+        photoURL: avatarURL,
+        uid: res.user.uid,
+      });
 
-  return { signup, isPending, error };
+      const token = await res.user.getIdToken();
+      console.log("User Token:", token);
+
+      dispatch(
+        login({
+          displayName: userName,
+          photoURL: avatarURL,
+          uid: res.user.uid,
+          email: res.user.email,
+        })
+      );
+
+      toast.success(`Welcome, ${userName}`);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return { signup, isPending };
 };
