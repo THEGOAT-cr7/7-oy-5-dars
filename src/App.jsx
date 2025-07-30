@@ -14,6 +14,7 @@ import Contact from "./pages/Contact";
 
 function App() {
   const { user } = useSelector((state) => state.user);
+
   const routes = createBrowserRouter([
     {
       path: "/",
@@ -23,18 +24,9 @@ function App() {
         </ProtectedRoutes>
       ),
       children: [
-        {
-          index: true,
-          element: <Home />,
-        },
-        {
-          path: "/about",
-          element: <About />,
-        },
-        {
-          path: "/contact",
-          element: <Contact />,
-        },
+        { index: true, element: <Home /> },
+        { path: "/about", element: <About /> },
+        { path: "/contact", element: <Contact /> },
       ],
     },
     {
